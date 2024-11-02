@@ -1,0 +1,6 @@
+TX_SCHEMA = "transactions"
+TX_CATEGORY_TABLE = "tx_categories"
+DEBIT_TX_TABLE = "debit_transactions"
+CREDIT_CRD_TX_TABLE = "credit_card_transactions"
+MANUAL_TX_TABLE = "manual_transactions"
+LOAN_TABLE = "loans"
