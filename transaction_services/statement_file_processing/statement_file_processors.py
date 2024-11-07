@@ -9,7 +9,6 @@ import psycopg2
 import argparse
 
 
-
 def process_file(
     processor: BaseStatementProcessor.__class__,
     file_path: Path,
@@ -26,8 +25,7 @@ def process_file(
 
 
 def delegate_new_files_to_processor(
-    config: Config,
-    db_conn: psycopg2.extensions.connection
+    config: Config, db_conn: psycopg2.extensions.connection
 ) -> None:
     abn_debit_transactions_folder = config.debit_stmt_input_dir
     for file_path in abn_debit_transactions_folder.glob("*.TAB"):
@@ -40,15 +38,18 @@ def delegate_new_files_to_processor(
 
 
 def create_arg_parser():
-    parser = argparse.ArgumentParser(description='Process bank statement files and store data in a database.')
-    parser.add_argument('--config-file', type=str, required=True, help='Path to the configuration file')
+    parser = argparse.ArgumentParser(
+        description="Process bank statement files and store data in a database."
+    )
+    parser.add_argument(
+        "--config-file", type=str, required=True, help="Path to the configuration file"
+    )
     return parser.parse_args()
+
 
 def main() -> None:
     args = create_arg_parser()
     config = get_config(args.config_file)
-    db_conn = psycopg2.connect(
-        config.postgres_conn_str
-    )
+    db_conn = psycopg2.connect(config.postgres_conn_str)
     delegate_new_files_to_processor(config, db_conn)
     db_conn.close()

@@ -2,10 +2,8 @@ import psycopg2
 import pandas as pd
 import streamlit as st
 from .base_views import TimeRangeView
-from typing import Optional
 import datetime
-import dateutil.relativedelta
-from . import (
+from transaction_services.config.db_constants import (
     TX_SCHEMA,
     TX_CATEGORY_TABLE,
     DEBIT_TX_TABLE,
@@ -22,10 +20,10 @@ class DebitTxLoanLinking(TimeRangeView):
     def view_name(self):
         return "Loan link ABN transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
-       
+
         # Fetch data from the database
         cur.execute(
             f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, debit_tx_reference, currency, foreign_amt_borrowed
@@ -93,7 +91,7 @@ class DebitTxLoanLinking(TimeRangeView):
         selected_abn_tx_data = None
         if selected_abn_transaction is not None:
             selected_abn_tx_data = abn_transactions_df.iloc[
-                        selected_abn_transaction["selection"]["rows"]
+                selected_abn_transaction["selection"]["rows"]
             ].to_dict(orient="records")
 
         if selected_loans is not None:
@@ -103,16 +101,22 @@ class DebitTxLoanLinking(TimeRangeView):
 
         if st.button("Link Loan"):
             if len(selected_abn_tx_data) > 0 and len(selected_loan_data) > 0:
-                selected_loan_ids = [loan_record["id"] for loan_record in selected_loan_data]
-                selected_loan_tx_dates = set([loan_record["tx_date"] for loan_record in selected_loan_data])
-                
+                selected_loan_ids = [
+                    loan_record["id"] for loan_record in selected_loan_data
+                ]
+                selected_loan_tx_dates = set(
+                    [loan_record["tx_date"] for loan_record in selected_loan_data]
+                )
+
             if len(selected_loan_tx_dates) > 1:
                 st.error(f"More that one loan tx date: {selected_loan_tx_dates}")
                 return
             selected_loan_tx_date = selected_loan_tx_dates.pop()
             selected_abn_tx_date = selected_abn_tx_data[0]["tx_date"]
             if selected_loan_tx_date != selected_abn_tx_date:
-                st.error(f"Loan tx date {selected_loan_tx_date} != debit tx date {selected_abn_tx_date}")
+                st.error(
+                    f"Loan tx date {selected_loan_tx_date} != debit tx date {selected_abn_tx_date}"
+                )
                 return
 
             cur.execute(
@@ -124,7 +128,6 @@ class DebitTxLoanLinking(TimeRangeView):
                 (int(selected_abn_tx_data[0]["id"]), tuple(selected_loan_ids)),
             )
             conn.commit()
-
 
         # Fetch data from the database
         # Close the connection
@@ -139,7 +142,7 @@ class ManualTxLoanLinking(TimeRangeView):
     def view_name(self):
         return "Loan link Manual Transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -181,7 +184,6 @@ class ManualTxLoanLinking(TimeRangeView):
             manual_transaction_data, columns=[desc[0] for desc in cur.description]
         )
 
-
         col_left, col_right = st.columns([0.5, 0.5])
         with col_left:
             selected_manual_transaction = st.dataframe(
@@ -208,7 +210,7 @@ class ManualTxLoanLinking(TimeRangeView):
         selected_manual_tx_data = None
         if selected_manual_transaction is not None:
             selected_manual_tx_data = manual_transactions_df.iloc[
-                        selected_manual_transaction["selection"]["rows"]
+                selected_manual_transaction["selection"]["rows"]
             ].to_dict(orient="records")
 
         if selected_loans is not None:
@@ -218,16 +220,22 @@ class ManualTxLoanLinking(TimeRangeView):
 
         if st.button("Link Loan"):
             if len(selected_manual_tx_data) > 0 and len(selected_loan_data) > 0:
-                selected_loan_ids = [loan_record["id"] for loan_record in selected_loan_data]
-                selected_loan_tx_dates = set([loan_record["tx_date"] for loan_record in selected_loan_data])
-                
+                selected_loan_ids = [
+                    loan_record["id"] for loan_record in selected_loan_data
+                ]
+                selected_loan_tx_dates = set(
+                    [loan_record["tx_date"] for loan_record in selected_loan_data]
+                )
+
             if len(selected_loan_tx_dates) > 1:
                 st.error(f"More that one loan tx date: {selected_loan_tx_dates}")
                 return
             selected_loan_tx_date = selected_loan_tx_dates.pop()
             selected_manual_tx_date = selected_manual_tx_data[0]["tx_date"]
             if selected_loan_tx_date != selected_manual_tx_date:
-                st.error(f"Loan tx date {selected_loan_tx_date} != manual tx date {selected_manual_tx_date}")
+                st.error(
+                    f"Loan tx date {selected_loan_tx_date} != manual tx date {selected_manual_tx_date}"
+                )
                 return
 
             cur.execute(
@@ -248,10 +256,9 @@ class CreditCrdLoanLinking(TimeRangeView):
     def view_name(self):
         return "Loan link Credit Card transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
-
 
         cur.execute(
             f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, currency, foreign_amt_borrowed
@@ -318,7 +325,7 @@ class CreditCrdLoanLinking(TimeRangeView):
         selected_credit_tx_data = None
         if selected_credit_tx_data is not None:
             selected_credit_tx_data = credit_transactions_df.iloc[
-                        selected_credit_tx_data["selection"]["rows"]
+                selected_credit_transaction["selection"]["rows"]
             ].to_dict(orient="records")
 
         if selected_loans is not None:
@@ -328,16 +335,22 @@ class CreditCrdLoanLinking(TimeRangeView):
 
         if st.button("Link Loan"):
             if len(selected_credit_tx_data) > 0 and len(selected_loan_data) > 0:
-                selected_loan_ids = [loan_record["id"] for loan_record in selected_loan_data]
-                selected_loan_tx_dates = set([loan_record["tx_date"] for loan_record in selected_loan_data])
-                
+                selected_loan_ids = [
+                    loan_record["id"] for loan_record in selected_loan_data
+                ]
+                selected_loan_tx_dates = set(
+                    [loan_record["tx_date"] for loan_record in selected_loan_data]
+                )
+
             if len(selected_loan_tx_dates) > 1:
                 st.error(f"More that one loan tx date: {selected_loan_tx_dates}")
                 return
             selected_loan_tx_date = selected_loan_tx_dates.pop()
             selected_credit_tx_date = selected_credit_tx_data[0]["tx_date"]
             if selected_loan_tx_date != selected_credit_tx_date:
-                st.error(f"Loan tx date {selected_loan_tx_date} != credit tx date {selected_credit_tx_date}")
+                st.error(
+                    f"Loan tx date {selected_loan_tx_date} != credit tx date {selected_credit_tx_date}"
+                )
                 return
 
             selected_credit_tx = selected_credit_tx_data[0]
@@ -347,6 +360,12 @@ class CreditCrdLoanLinking(TimeRangeView):
                         set (credit_tx_stmt_file_ref, credit_tx_stmt_id_ref) = %s
                         where id in %s
                         """,
-                ((selected_credit_tx["statement_id_in_file"], selected_credit_tx["statement_file_name"]), tuple(selected_loan_ids)),
+                (
+                    (
+                        selected_credit_tx["statement_id_in_file"],
+                        selected_credit_tx["statement_file_name"],
+                    ),
+                    tuple(selected_loan_ids),
+                ),
             )
             conn.commit()

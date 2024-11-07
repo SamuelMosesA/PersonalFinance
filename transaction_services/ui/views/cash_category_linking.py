@@ -4,8 +4,7 @@ import streamlit as st
 from .base_views import BaseStreamlitView, TimeRangeView
 from typing import Optional
 import datetime
-import dateutil.relativedelta
-from . import (
+from transaction_services.config.db_constants import (
     TX_SCHEMA,
     TX_CATEGORY_TABLE,
     DEBIT_TX_TABLE,
@@ -105,7 +104,7 @@ class DebitCashCategoryLinking(TimeRangeView):
     def view_name(self):
         return "Cash Category link ABN transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -246,7 +245,6 @@ class DebitCashCategoryLinking(TimeRangeView):
         conn.close()
 
 
-
 class ManualTxCashCategoryLinking(TimeRangeView):
     def __init__(self, db_conn_str):
         super().__init__(db_conn_str=db_conn_str, months_of_history=3)
@@ -254,7 +252,7 @@ class ManualTxCashCategoryLinking(TimeRangeView):
     def view_name(self):
         return "Cash Category link Manual transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -399,7 +397,7 @@ class CreditCrdCashCategoryLinking(TimeRangeView):
     def view_name(self):
         return "Cash Category link Credit Card transactions"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 

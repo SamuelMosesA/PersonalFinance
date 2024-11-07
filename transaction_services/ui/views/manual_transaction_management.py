@@ -5,12 +5,13 @@ from .base_views import TimeRangeView
 import datetime
 import json
 
-from . import (
+from transaction_services.config.db_constants import (
     TX_SCHEMA,
     MANUAL_TX_TABLE,
     DEBIT_TX_TABLE,
-    TX_CATEGORY_TABLE
+    TX_CATEGORY_TABLE,
 )
+
 
 class ManageManualTxEntries(TimeRangeView):
     def __init__(self, db_conn_str):
@@ -19,8 +20,7 @@ class ManageManualTxEntries(TimeRangeView):
     def view_name(self):
         return "Manage Manual Tx Entries"
 
-
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -78,7 +78,7 @@ class ManageManualTxEntries(TimeRangeView):
                 "tx_date": st.column_config.DateColumn(required=True),
                 "currency": st.column_config.TextColumn(default="EUR"),
                 "remarks": st.column_config.TextColumn(required=True),
-                "description": st.column_config.TextColumn(required=True)
+                "description": st.column_config.TextColumn(required=True),
             },
         )
 
@@ -115,9 +115,6 @@ class ManageManualTxEntries(TimeRangeView):
         conn.close()
 
 
-
-
-
 class CorrectDebitTx(TimeRangeView):
     def __init__(self, db_conn_str):
         super().__init__(db_conn_str=db_conn_str, months_of_history=3)
@@ -125,8 +122,7 @@ class CorrectDebitTx(TimeRangeView):
     def view_name(self):
         return "Add ABN Correction Entries"
 
-
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -202,13 +198,18 @@ class CorrectDebitTx(TimeRangeView):
             height=1200,
         )
 
-        if selected_abn_transaction is not None and len(selected_abn_transaction["selection"]["rows"])>0:
+        if (
+            selected_abn_transaction is not None
+            and len(selected_abn_transaction["selection"]["rows"]) > 0
+        ):
             selected_abn_order_row = [
                 row
-                    for row in abn_transactions_df.iloc[
-                        selected_abn_transaction["selection"]["rows"]
-                    ].to_dict(orient="index").values()
-                ][0]
+                for row in abn_transactions_df.iloc[
+                    selected_abn_transaction["selection"]["rows"]
+                ]
+                .to_dict(orient="index")
+                .values()
+            ][0]
             st.write(selected_abn_order_row)
 
             # Create a separate DataFrame for adding new rows
@@ -227,11 +228,21 @@ class CorrectDebitTx(TimeRangeView):
                 use_container_width=True,
                 key="new_loan_rows",
                 column_config={
-                    "tx_amount": st.column_config.NumberColumn(required=True, default=float(selected_abn_order_row["tx_amount"])),
-                    "tx_date": st.column_config.DateColumn(required=True, default=selected_abn_order_row["tx_date"]),
+                    "tx_amount": st.column_config.NumberColumn(
+                        required=True,
+                        default=float(selected_abn_order_row["tx_amount"]),
+                    ),
+                    "tx_date": st.column_config.DateColumn(
+                        required=True, default=selected_abn_order_row["tx_date"]
+                    ),
                     "currency": st.column_config.TextColumn(default="EUR"),
-                    "remarks": st.column_config.TextColumn(required=True, default=selected_abn_order_row["remarks"]),
-                    "description": st.column_config.TextColumn(required=True, default=json.dumps(selected_abn_order_row["desc_json"]))
+                    "remarks": st.column_config.TextColumn(
+                        required=True, default=selected_abn_order_row["remarks"]
+                    ),
+                    "description": st.column_config.TextColumn(
+                        required=True,
+                        default=json.dumps(selected_abn_order_row["desc_json"]),
+                    ),
                 },
             )
 
@@ -243,10 +254,16 @@ class CorrectDebitTx(TimeRangeView):
                     row["remarks"],
                     row["currency"],
                     selected_abn_order_row["id"],
-                    selected_abn_order_row["tx_date"]
+                    selected_abn_order_row["tx_date"],
                 )
                 for row in new_rows_df.dropna(
-                    subset=["tx_amount", "tx_date", "currency", "remarks", "description"]
+                    subset=[
+                        "tx_amount",
+                        "tx_date",
+                        "currency",
+                        "remarks",
+                        "description",
+                    ]
                 ).to_dict(orient="records")
             ]
 
