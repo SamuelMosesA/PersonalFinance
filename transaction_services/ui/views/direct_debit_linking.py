@@ -1,15 +1,15 @@
-
 import psycopg2
 import pandas as pd
 import streamlit as st
 from .base_views import TimeRangeView
 import datetime
-from . import (
+from transaction_services.config.db_constants import (
     TX_SCHEMA,
     DEBIT_TX_TABLE,
     CREDIT_CRD_TX_TABLE,
-    TX_CATEGORY_TABLE
+    TX_CATEGORY_TABLE,
 )
+
 
 class DirectDebitLinking(TimeRangeView):
     def __init__(self, db_conn_str):
@@ -18,7 +18,7 @@ class DirectDebitLinking(TimeRangeView):
     def view_name(self):
         return "Direct Debit Linking"
 
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -105,36 +105,54 @@ class DirectDebitLinking(TimeRangeView):
         selected_abn_order_rows = []
         if selected_abn_transactions is not None:
             selected_abn_order_rows = [
-                    {"id":int(row["id"]), "tx_amount":row["tx_amount"]}
-                    for row in abn_transactions_df.iloc[
-                        selected_abn_transactions["selection"]["rows"]
-                    ].to_dict(orient="index").values()
+                {"id": int(row["id"]), "tx_amount": row["tx_amount"]}
+                for row in abn_transactions_df.iloc[
+                    selected_abn_transactions["selection"]["rows"]
                 ]
+                .to_dict(orient="index")
+                .values()
+            ]
             with col_left:
                 st.write(selected_abn_order_rows)
-            
+
         selected_credit_tx_record = []
         if selected_credit_transactions is not None:
             selected_credit_tx_record = [
-                {"p_key":(row["statement_file_name"], int(row["statement_id_in_file"])), "tx_amount":row["tx_amount"]}
+                {
+                    "p_key": (
+                        row["statement_file_name"],
+                        int(row["statement_id_in_file"]),
+                    ),
+                    "tx_amount": row["tx_amount"],
+                }
                 for row in credit_transactions_df.iloc[
-                selected_credit_transactions["selection"]["rows"]].to_dict(orient="index").values()
+                    selected_credit_transactions["selection"]["rows"]
+                ]
+                .to_dict(orient="index")
+                .values()
             ]
             with col_right:
                 st.write(selected_credit_tx_record)
         if st.button("Link Cash Direct Debit"):
-                if selected_abn_order_rows[0]["tx_amount"]+selected_credit_tx_record[0]["tx_amount"] != 0:
-                    st.error("Amounts don't match")
-                    return
-                cur.execute(
-                    f"""
+            if (
+                selected_abn_order_rows[0]["tx_amount"]
+                + selected_credit_tx_record[0]["tx_amount"]
+                != 0
+            ):
+                st.error("Amounts don't match")
+                return
+            cur.execute(
+                f"""
                             UPDATE {TX_SCHEMA}.{CREDIT_CRD_TX_TABLE}
                             set direct_debit_link = %s
                             where (statement_file_name, statement_id_in_file) = %s
                             """,
-                    (int(selected_abn_order_rows[0]["id"]), tuple(selected_credit_tx_record[0]["p_key"])),
-                )
-                conn.commit()
+                (
+                    int(selected_abn_order_rows[0]["id"]),
+                    tuple(selected_credit_tx_record[0]["p_key"]),
+                ),
+            )
+            conn.commit()
 
         cur.close()
         conn.close()

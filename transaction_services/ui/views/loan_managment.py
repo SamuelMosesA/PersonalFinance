@@ -1,9 +1,9 @@
 import psycopg2
 import pandas as pd
 import streamlit as st
-from .base_views import TimeRangeView 
+from .base_views import TimeRangeView
 import datetime
-from . import (
+from transaction_services.config.db_constants import (
     TX_SCHEMA,
     LOAN_TABLE,
 )
@@ -16,8 +16,7 @@ class ManageLoanEntries(TimeRangeView):
     def view_name(self):
         return "Manage Loan Entries"
 
-
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -44,25 +43,33 @@ class ManageLoanEntries(TimeRangeView):
         )
         loan_ids_to_settle = None
         if existing_row_selection is not None:
-            loan_ids_to_settle = existing_loans.iloc[
-                existing_row_selection["selection"]["rows"]
-            ]["id"].to_dict().values()
+            loan_ids_to_settle = (
+                existing_loans.iloc[existing_row_selection["selection"]["rows"]]["id"]
+                .to_dict()
+                .values()
+            )
         st.write(loan_ids_to_settle)
 
         if st.button("Create Settlement Entry"):
-            if loan_ids_to_settle: 
-                loan_amt_to_settle =  existing_loans.iloc[
+            if loan_ids_to_settle:
+                loan_amt_to_settle = existing_loans.iloc[
                     existing_row_selection["selection"]["rows"]
                 ]["tx_amount_borrowed"].sum()
 
-                counterparties = ",".join(set(existing_loans.iloc[
-                    existing_row_selection["selection"]["rows"]
-                ]["counterparty"].to_list()))
-                
-                currency = set(existing_loans.iloc[
-                    existing_row_selection["selection"]["rows"]
-                ]["currency"].to_list())
-                
+                counterparties = ",".join(
+                    set(
+                        existing_loans.iloc[
+                            existing_row_selection["selection"]["rows"]
+                        ]["counterparty"].to_list()
+                    )
+                )
+
+                currency = set(
+                    existing_loans.iloc[existing_row_selection["selection"]["rows"]][
+                        "currency"
+                    ].to_list()
+                )
+
                 if len(currency) > 1:
                     st.error(f"Mixed currencies {currency}")
                     return
@@ -71,17 +78,23 @@ class ManageLoanEntries(TimeRangeView):
                     f"""INSERT INTO {TX_SCHEMA}.{LOAN_TABLE} (tx_amount_borrowed, counterparty, remarks, currency, tx_date, foreign_amt_borrowed) 
                     VALUES (%s, %s, %s, %s, %s, %s) 
                     RETURNING id""",
-                    (-loan_amt_to_settle, counterparties, "Loan settlement", currency.pop(), datetime.date.today(), None)
+                    (
+                        -loan_amt_to_settle,
+                        counterparties,
+                        "Loan settlement",
+                        currency.pop(),
+                        datetime.date.today(),
+                        None,
+                    ),
                 )
                 inserted_settlement_record_id = cur.fetchone()
                 cur.execute(
                     f"""UPDATE {TX_SCHEMA}.{LOAN_TABLE}
                     SET settling_loan_tx_link = %s
                     WHERE id IN %s""",
-                    (inserted_settlement_record_id, tuple(loan_ids_to_settle))
+                    (inserted_settlement_record_id, tuple(loan_ids_to_settle)),
                 )
                 conn.commit()
-
 
         # Delete selected rows
         if st.button("Delete Selected Rows"):
@@ -115,7 +128,7 @@ class ManageLoanEntries(TimeRangeView):
                 "tx_amount_borrowed": st.column_config.NumberColumn(required=True),
                 "foreign_amt_borrowed": st.column_config.NumberColumn(),
                 "currency": st.column_config.TextColumn(default="EUR"),
-                "tx_date": st.column_config.DateColumn(default=datetime.date.today())
+                "tx_date": st.column_config.DateColumn(default=datetime.date.today()),
             },
         )
 

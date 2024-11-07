@@ -3,14 +3,22 @@ import pandas as pd
 import streamlit as st
 from .base_views import TimeRangeView
 import datetime
-import dateutil.relativedelta
 import plotly.express as px
-from . import (TX_SCHEMA, TX_CATEGORY_TABLE, DEBIT_TX_TABLE, CREDIT_CRD_TX_TABLE, MANUAL_TX_TABLE, LOAN_TABLE)
+from transaction_services.config.db_constants import (
+    TX_SCHEMA,
+    TX_CATEGORY_TABLE,
+    DEBIT_TX_TABLE,
+    CREDIT_CRD_TX_TABLE,
+    MANUAL_TX_TABLE,
+    LOAN_TABLE,
+)
 from st_aggrid import AgGrid, GridOptionsBuilder
 
+
 @st.cache_data
-def convert_df_to_csv(df:pd.DataFrame):
-   return df.to_csv(index=False).encode('utf-8')
+def convert_df_to_csv(df: pd.DataFrame):
+    return df.to_csv(index=False).encode("utf-8")
+
 
 class ExpenditureGraph(TimeRangeView):
     def __init__(self, db_conn_str):
@@ -18,10 +26,8 @@ class ExpenditureGraph(TimeRangeView):
 
     def view_name(self):
         return "Expenditure Graph"
-    
 
-
-    def data_view(self, start_date:datetime.date, end_date:datetime.date) -> None:
+    def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None:
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -139,7 +145,7 @@ class ExpenditureGraph(TimeRangeView):
         all_exp_tx_entry_df = pd.DataFrame(
             all_exp_tx_entries, columns=[desc[0] for desc in cur.description]
         )
-        
+
         st.info("Total Expenditure: " + str(all_exp_tx_entry_df["tx_amount"].sum()))
 
         all_tx_cat_df = (
@@ -158,16 +164,23 @@ class ExpenditureGraph(TimeRangeView):
         expenditure_graph.update_layout(height=1500)
         st.plotly_chart(expenditure_graph, use_container_width=True)
 
-
         go = GridOptionsBuilder.from_dataframe(all_exp_tx_entry_df)
         go.configure_column("description", tooltipField="description")
         go.configure_grid_options(tooltipShowDelay=100)
-        AgGrid(all_exp_tx_entry_df, 
-               fit_columns_on_grid_load=True, 
-               height=1500,
-               gridOptions=go.build())
+        AgGrid(
+            all_exp_tx_entry_df,
+            fit_columns_on_grid_load=True,
+            height=1500,
+            gridOptions=go.build(),
+        )
 
         all_exp_tx_csv = convert_df_to_csv(all_exp_tx_entry_df)
-        st.download_button("Download Statement", all_exp_tx_csv, f"{start_date}_to_{end_date}_all-tx.csv", "text/csv", key='download-all-tx-csv')
+        st.download_button(
+            "Download Statement",
+            all_exp_tx_csv,
+            f"{start_date}_to_{end_date}_all-tx.csv",
+            "text/csv",
+            key="download-all-tx-csv",
+        )
 
         st.dataframe(all_tx_cat_df, use_container_width=True, height=1000)
