@@ -22,7 +22,7 @@ class ManageLoanEntries(TimeRangeView):
 
         # Fetch data from the database
         cur.execute(
-            f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, currency, foreign_amt_borrowed, settling_loan_tx_link
+            f"""SELECT id, tx_amount_borrowed,  counterparty, remarks, tx_date, currency, foreign_amt_borrowed, settling_loan_tx_link, is_settlement, debit_tx_reference
             FROM {TX_SCHEMA}.{LOAN_TABLE}
             WHERE tx_date >= '{start_date}' and tx_date <= '{end_date}'
             order by id desc"""
@@ -50,51 +50,58 @@ class ManageLoanEntries(TimeRangeView):
             )
         st.write(loan_ids_to_settle)
 
-        if st.button("Create Settlement Entry"):
-            if loan_ids_to_settle:
-                loan_amt_to_settle = existing_loans.iloc[
-                    existing_row_selection["selection"]["rows"]
-                ]["tx_amount_borrowed"].sum()
+        settlement_col_1, settlement_col_2 = st.columns(2)
+        with settlement_col_2:
+            settlement_tx_date = st.date_input(
+                label="Settlement Tx Day", value="default_value_today"
+            )
+        with settlement_col_1:
+            if st.button("Create Settlement Entry"):
+                if loan_ids_to_settle:
+                    loan_amt_to_settle = existing_loans.iloc[
+                        existing_row_selection["selection"]["rows"]
+                    ]["tx_amount_borrowed"].sum()
 
-                counterparties = ",".join(
-                    set(
+                    counterparties = ",".join(
+                        set(
+                            existing_loans.iloc[
+                                existing_row_selection["selection"]["rows"]
+                            ]["counterparty"].to_list()
+                        )
+                    )
+
+                    currency = set(
                         existing_loans.iloc[
                             existing_row_selection["selection"]["rows"]
-                        ]["counterparty"].to_list()
+                        ]["currency"].to_list()
                     )
-                )
 
-                currency = set(
-                    existing_loans.iloc[existing_row_selection["selection"]["rows"]][
-                        "currency"
-                    ].to_list()
-                )
+                    if len(currency) > 1:
+                        st.error(f"Mixed currencies {currency}")
+                        return
 
-                if len(currency) > 1:
-                    st.error(f"Mixed currencies {currency}")
-                    return
-
-                cur.execute(
-                    f"""INSERT INTO {TX_SCHEMA}.{LOAN_TABLE} (tx_amount_borrowed, counterparty, remarks, currency, tx_date, foreign_amt_borrowed) 
-                    VALUES (%s, %s, %s, %s, %s, %s) 
-                    RETURNING id""",
-                    (
-                        -loan_amt_to_settle,
-                        counterparties,
-                        "Loan settlement",
-                        currency.pop(),
-                        datetime.date.today(),
-                        None,
-                    ),
-                )
-                inserted_settlement_record_id = cur.fetchone()
-                cur.execute(
-                    f"""UPDATE {TX_SCHEMA}.{LOAN_TABLE}
-                    SET settling_loan_tx_link = %s
-                    WHERE id IN %s""",
-                    (inserted_settlement_record_id, tuple(loan_ids_to_settle)),
-                )
-                conn.commit()
+                    cur.execute(
+                        f"""INSERT INTO {TX_SCHEMA}.{LOAN_TABLE} (tx_amount_borrowed, counterparty, remarks, currency, tx_date, foreign_amt_borrowed, is_settlement) 
+                        VALUES (%s, %s, %s, %s, %s, %s, %s) 
+                        RETURNING id""",
+                        (
+                            -loan_amt_to_settle,
+                            counterparties,
+                            "Loan settlement",
+                            currency.pop(),
+                            settlement_tx_date,
+                            None,
+                            True,
+                        ),
+                    )
+                    inserted_settlement_record_id = cur.fetchone()
+                    cur.execute(
+                        f"""UPDATE {TX_SCHEMA}.{LOAN_TABLE}
+                        SET settling_loan_tx_link = %s
+                        WHERE id IN %s""",
+                        (inserted_settlement_record_id, tuple(loan_ids_to_settle)),
+                    )
+                    conn.commit()
 
         # Delete selected rows
         if st.button("Delete Selected Rows"):

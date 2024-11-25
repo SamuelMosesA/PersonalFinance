@@ -22,6 +22,12 @@ from transaction_services.ui.views.manual_transaction_management import (
 from transaction_services.ui.views.direct_debit_linking import DirectDebitLinking
 from transaction_services.config.config_reader import Config, get_config
 import argparse
+import logging
+import sys
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, encoding="utf-8", level=logging.INFO)
 
 
 def _get_views_dictionary(
@@ -66,6 +72,7 @@ def create_arg_parser():
 def get_cached_config():
     args = create_arg_parser()
     config: Config = get_config(args.config_file)
+    logger.info("Starting Finance Dashboard with config: %s", config)
     return config
 
 

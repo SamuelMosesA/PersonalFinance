@@ -163,6 +163,7 @@ class CorrectDebitTx(TimeRangeView):
         cur.execute(f"""
                 select
                 dt.id,
+                dt.bank,
                 dt.tx_amount,
                 tc.category,
                 tc.subcategory,

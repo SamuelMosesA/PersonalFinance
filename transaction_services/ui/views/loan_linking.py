@@ -26,7 +26,7 @@ class DebitTxLoanLinking(TimeRangeView):
 
         # Fetch data from the database
         cur.execute(
-            f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, debit_tx_reference, currency, foreign_amt_borrowed
+            f"""SELECT id, tx_amount_borrowed, is_settlement, counterparty, remarks, tx_date, debit_tx_reference, currency, foreign_amt_borrowed
             FROM {TX_SCHEMA}.{LOAN_TABLE}
             WHERE tx_date >= '{start_date}' and tx_date <= '{end_date}'
             order by id desc"""
@@ -40,6 +40,7 @@ class DebitTxLoanLinking(TimeRangeView):
         cur.execute(f"""
                 select
                 dt.id,
+                dt.bank,
                 dt.tx_amount,
                 tc.category,
                 tc.subcategory,
@@ -148,7 +149,7 @@ class ManualTxLoanLinking(TimeRangeView):
 
         # Fetch data from the database
         cur.execute(
-            f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, currency, foreign_amt_borrowed
+            f"""SELECT id, tx_amount_borrowed, is_settlement, counterparty, remarks, tx_date, currency, foreign_amt_borrowed
             FROM {TX_SCHEMA}.{LOAN_TABLE}
             WHERE tx_date >= '{start_date}' and tx_date <= '{end_date}'
             order by id desc"""
@@ -261,7 +262,7 @@ class CreditCrdLoanLinking(TimeRangeView):
         cur = conn.cursor()
 
         cur.execute(
-            f"""SELECT id, tx_amount_borrowed, counterparty, remarks, tx_date, currency, foreign_amt_borrowed
+            f"""SELECT id, tx_amount_borrowed, is_settlement, counterparty, remarks, tx_date, currency, foreign_amt_borrowed
             FROM {TX_SCHEMA}.{LOAN_TABLE}
             WHERE tx_date >= '{start_date}' and tx_date <= '{end_date}'
             order by id desc"""

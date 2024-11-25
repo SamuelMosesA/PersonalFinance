@@ -30,6 +30,7 @@ jsonschema-specifications==2024.10.1
 markdown-it-py==3.0.0
 markupsafe==3.0.1
 mdurl==0.1.2
+mt-940==4.30.0
 numpy==2.1.2
 packaging==24.1
 pandas==2.2.3
