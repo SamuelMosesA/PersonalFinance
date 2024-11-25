@@ -3,7 +3,7 @@ from .base_statement_processor import BaseStatementProcessor
 from psycopg2 import sql
 import polars as pl
 from pathlib import Path
-from transaction_services.config.db_constants import TX_SCHEMA, CREDIT_CRD_TX_TABLE 
+from transaction_services.config.db_constants import TX_SCHEMA, CREDIT_CRD_TX_TABLE
 
 
 class IcsCreditStatementProcessor(BaseStatementProcessor):

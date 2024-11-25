@@ -6,5 +6,12 @@ postgres:
   db_name: personal_finance
 
 statement_services:
-  debit_stmt_input_dir: input_files/debit_statements
-  credit_card_stmt_input_dir: input_files/credit_card_statements
+  abn_debit_stmt:
+    input_dir: input_files/debit_statements
+    file_glob: "*.TAB"
+  credit_card_stmt:
+    input_dir: input_files/credit_card_statements
+    file_glob: "Statement-*.pdf"
+  bunq_stmt:
+    input_dir: input_files/bunq_statements
+    file_glob: "*.sta"

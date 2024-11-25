@@ -120,13 +120,15 @@ class DebitCashCategoryLinking(TimeRangeView):
         cur.execute(f"""
                 select
                 dt.id,
+                dt.bank,
+                dt.account,
                 dt.tx_amount,
                 tc.category,
                 tc.subcategory,
                 dt.remarks,
                 dt.recurrence,
-                dt.desc_json,
                 dt.description,
+                dt.desc_json,
                 dt.tx_date,
                 dt.start_balance,
                 dt.end_balance

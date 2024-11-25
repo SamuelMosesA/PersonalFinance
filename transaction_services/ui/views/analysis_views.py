@@ -36,10 +36,9 @@ class ExpenditureGraph(TimeRangeView):
             with loan_corrections as(
                 select l.debit_tx_reference, sum(l.tx_amount_borrowed) as tx_amount_borrowed
                 FROM {TX_SCHEMA}.{LOAN_TABLE} l
-                where l.debit_tx_reference is not null
+                where l.debit_tx_reference is not null 
                 AND l.tx_date >= '{start_date}' AND l.tx_date <= '{end_date}'
                 group by l.debit_tx_reference
-                having sum(l.tx_amount_borrowed) < 0
             ),
             manual_corrections as(
             select mtx.correcting_debit_tx_ref
@@ -62,7 +61,8 @@ class ExpenditureGraph(TimeRangeView):
             AND cdt.tx_date >= '{start_date}' AND cdt.tx_date <= '{end_date}'
             ),
             debit_tx as(
-                select 'debit' as source, 
+                select 
+                'debit:' || dt.bank as source, 
                 dt.tx_amount + COALESCE(-lc.tx_amount_borrowed,0) as tx_amount,
                 dt.tx_category as tx_category_id,
                 dt.remarks as remarks,
@@ -71,8 +71,8 @@ class ExpenditureGraph(TimeRangeView):
                 dt.id::text as id
             FROM
                 {TX_SCHEMA}.{DEBIT_TX_TABLE} dt
-            LEFT JOIN loan_corrections lc
-                on lc.tx_amount_borrowed < 0 and dt.id = lc.debit_tx_reference
+            LEFT JOIN loan_corrections lc ON
+                dt.id = lc.debit_tx_reference
              WHERE
                 NOT EXISTS (
                     SELECT 1
@@ -135,9 +135,8 @@ class ExpenditureGraph(TimeRangeView):
             FROM
                 all_tx_with_category atxc
             WHERE
-                atxc.tx_amount < 0
-                AND atxc.category NOT IN ('Foreign Transfer') AND atxc.subcategory not in ('Rent', 'Direct Debit')
-            order by atxc.tx_amount, atxc.tx_date desc
+                atxc.category NOT IN ('Foreign Transfer')
+            ORDER BY atxc.tx_amount, atxc.tx_date desc
             """
         cur.execute(query=query)
 
@@ -146,7 +145,9 @@ class ExpenditureGraph(TimeRangeView):
             all_exp_tx_entries, columns=[desc[0] for desc in cur.description]
         )
 
-        st.info("Total Expenditure: " + str(all_exp_tx_entry_df["tx_amount"].sum()))
+        sum_col_1, sum_col_2 = st.columns(2)
+        with sum_col_1:
+            st.info("Total Flow: " + str(all_exp_tx_entry_df["tx_amount"].sum()))
 
         all_tx_cat_df = (
             all_exp_tx_entry_df.groupby(["category", "subcategory"])["tx_amount"]
@@ -154,8 +155,9 @@ class ExpenditureGraph(TimeRangeView):
             .reset_index()
             .sort_values("tx_amount", ascending=False)
         )
+        all_tx_exp_cat_df = all_tx_cat_df[all_tx_cat_df["tx_amount"] > 0]
         expenditure_graph = px.sunburst(
-            all_tx_cat_df,
+            all_tx_exp_cat_df,
             path=["category", "subcategory"],
             values="tx_amount",
             color="tx_amount",
@@ -163,6 +165,9 @@ class ExpenditureGraph(TimeRangeView):
         )
         expenditure_graph.update_layout(height=1500)
         st.plotly_chart(expenditure_graph, use_container_width=True)
+
+        with sum_col_2:
+            st.info("Total Expenditure: " + str(all_tx_exp_cat_df["tx_amount"].sum()))
 
         go = GridOptionsBuilder.from_dataframe(all_exp_tx_entry_df)
         go.configure_column("description", tooltipField="description")
@@ -173,6 +178,8 @@ class ExpenditureGraph(TimeRangeView):
             height=1500,
             gridOptions=go.build(),
         )
+
+        # atxc.category NOT IN ('Foreign Transfer') AND atxc.subcategory not in ('Rent', 'Direct Debit', 'Lending')
 
         all_exp_tx_csv = convert_df_to_csv(all_exp_tx_entry_df)
         st.download_button(

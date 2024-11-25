@@ -29,6 +29,7 @@ class AbnStatementProcessor(BaseStatementProcessor):
             pl.col("currency").cast(pl.String),
             pl.col("description").cast(pl.String),
             pl.col("desc_json").map_elements(json.dumps, return_dtype=pl.String),
+            pl.lit("abn_current").alias("bank"),
         )
 
     def parse_file(file_path):
