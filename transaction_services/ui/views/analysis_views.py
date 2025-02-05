@@ -66,7 +66,7 @@ class ExpenditureGraph(TimeRangeView):
                 dt.tx_amount + COALESCE(-lc.tx_amount_borrowed,0) as tx_amount,
                 dt.tx_category as tx_category_id,
                 dt.remarks as remarks,
-                dt.desc_json::text as description,
+                CASE WHEN dt.bank = 'abn_current' THEN dt.desc_json::text ELSE dt.description END AS description,
                 dt.tx_date as tx_date,
                 dt.id::text as id
             FROM
@@ -177,6 +177,7 @@ class ExpenditureGraph(TimeRangeView):
             fit_columns_on_grid_load=True,
             height=1500,
             gridOptions=go.build(),
+            enable_enterprise_modules=False
         )
 
         # atxc.category NOT IN ('Foreign Transfer') AND atxc.subcategory not in ('Rent', 'Direct Debit', 'Lending')

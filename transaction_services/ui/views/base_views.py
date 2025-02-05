@@ -28,18 +28,22 @@ class TimeRangeView(BaseStreamlitView):
     def __init__(self, db_conn_str: str, months_of_history: int):
         super().__init__(db_conn_str=db_conn_str)
         self.n_history_months = max(months_of_history, 1)
+        self.first_render = True
 
     @abstractmethod
     def data_view(self, start_date: datetime.date, end_date: datetime.date) -> None: ...
 
     @st.fragment
     def data_view_fragment(self) -> None:
+        if self.first_render:
+            st.session_state.pop("tx_to", None)
+            st.session_state.pop("tx_from", None)
+            self.first_render = False
+
         if st.button("Refresh"):
             st.rerun(scope="fragment")
 
-        tx_to_default = datetime.date.today()
-        if "tx_to" in st.session_state:
-            tx_to_default = st.session_state["tx_to"]
+        tx_to_default = st.session_state.get("tx_to", datetime.date.today())
 
         time_select_col_1, time_select_col_2 = st.columns(
             2, gap="large", vertical_alignment="bottom"
@@ -50,7 +54,9 @@ class TimeRangeView(BaseStreamlitView):
                 value=tx_to_default,
                 max_value=datetime.date.today(),
             )
-        tx_from_default = _first_day_of_n_months_ago(tx_to, self.n_history_months - 1)
+        tx_from_default = st.session_state.get('tx_from', 
+                                               _first_day_of_n_months_ago(tx_to, self.n_history_months - 1))
+
         with time_select_col_1:
             tx_from = st.date_input(
                 "Tx From",
@@ -59,6 +65,7 @@ class TimeRangeView(BaseStreamlitView):
             )
 
         st.session_state["tx_to"] = tx_to
+        st.session_state["tx_from"] = tx_from
 
         self.data_view(tx_from, tx_to)
 
