@@ -20,6 +20,7 @@ class ManageManualTxEntriesNiceGUI(TimeRangeNiceGUIView):
         return "Manage Manual Tx Entries"
 
     def data_view(self, container: ui.element, start_date: datetime.date, end_date: datetime.date) -> None:
+        container.clear()
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
         cur.execute(
@@ -63,8 +64,8 @@ class ManageManualTxEntriesNiceGUI(TimeRangeNiceGUIView):
                 curr = ui.input('Currency', value='EUR').props('outlined dense').classes('w-24')
                 ui.button('Add Entry', on_click=lambda: self.add_manual_tx(amount.value, dt_input.value, desc.value, rem.value, curr.value, container, start_date, end_date)).props('unelevated icon=add').classes('bg-slate-900 text-white px-8 py-2 rounded-lg font-medium hover:bg-slate-800 transition-colors h-10')
 
-    def delete_manual_tx(self, grid, container, start_date, end_date):
-        rows = grid.get_selected_rows()
+    async def delete_manual_tx(self, grid, container, start_date, end_date):
+        rows = await grid.get_selected_rows()
         if not rows:
             ui.notify('No rows selected', type='warning')
             return
@@ -75,7 +76,7 @@ class ManageManualTxEntriesNiceGUI(TimeRangeNiceGUIView):
             cur.execute(f"DELETE FROM {TX_SCHEMA}.{MANUAL_TX_TABLE} WHERE id IN %s", (tuple(ids),))
             conn.commit()
             ui.notify(f'Deleted {len(ids)} entries')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
@@ -95,7 +96,7 @@ class ManageManualTxEntriesNiceGUI(TimeRangeNiceGUIView):
             )
             conn.commit()
             ui.notify('Entry added')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
@@ -110,6 +111,7 @@ class DirectDebitLinkingNiceGUI(TimeRangeNiceGUIView):
         return "Direct Debit Linking"
 
     def data_view(self, container: ui.element, start_date: datetime.date, end_date: datetime.date) -> None:
+        container.clear()
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -161,38 +163,9 @@ class DirectDebitLinkingNiceGUI(TimeRangeNiceGUIView):
         cur.close()
         conn.close()
 
-        with container:
-            with ui.row().classes('w-full no-wrap gap-8 items-start'):
-                with ui.column().classes('flex-grow'):
-                    ui.label('ABN DIRECT DEBITS').classes('text-xs font-bold text-slate-400 tracking-widest mb-4')
-                    abn_grid = ui.aggrid({
-                        'columnDefs': [
-                            {'headerName': 'Amount', 'field': 'tx_amount', 'checkboxSelection': True, 'width': 120},
-                            {'headerName': 'Date', 'field': 'tx_date', 'width': 120},
-                            {'headerName': 'Description', 'field': 'description', 'width': 300},
-                        ],
-                        'rowData': abn_df.to_dict('records'),
-                        'rowSelection': 'single',
-                    }).classes('w-full shadow-sm rounded-xl overflow-hidden border border-slate-200').style('height: 600px')
-
-                with ui.column().classes('flex-grow'):
-                    ui.label('UNLINKED CREDIT CARD TX').classes('text-xs font-bold text-slate-400 tracking-widest mb-4')
-                    cc_grid = ui.aggrid({
-                        'columnDefs': [
-                            {'headerName': 'Amount', 'field': 'tx_amount', 'checkboxSelection': True, 'width': 120},
-                            {'headerName': 'Date', 'field': 'tx_date', 'width': 120},
-                            {'headerName': 'File', 'field': 'statement_file_name', 'width': 200},
-                        ],
-                        'rowData': cc_df.to_dict('records'),
-                        'rowSelection': 'single',
-                    }).classes('w-full shadow-sm rounded-xl overflow-hidden border border-slate-200').style('height: 600px')
-
-            with ui.row().classes('w-full justify-center mt-12'):
-                ui.button('Link Direct Debit', on_click=lambda: self.link_direct_debit(abn_grid, cc_grid, container, start_date, end_date)).props('unelevated icon=link').classes('bg-indigo-600 text-white px-12 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all hover:scale-105')
-
-    def link_direct_debit(self, abn_grid, cc_grid, container, start_date, end_date):
-        abn_rows = abn_grid.get_selected_rows()
-        cc_rows = cc_grid.get_selected_rows()
+    async def link_direct_debit(self, abn_grid, cc_grid, container, start_date, end_date):
+        abn_rows = await abn_grid.get_selected_rows()
+        cc_rows = await cc_grid.get_selected_rows()
         if not abn_rows or not cc_rows:
             ui.notify('Select one ABN transaction and one Credit Card transaction', type='warning')
             return
@@ -214,7 +187,7 @@ class DirectDebitLinkingNiceGUI(TimeRangeNiceGUIView):
             )
             conn.commit()
             ui.notify('Linked successfully')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:

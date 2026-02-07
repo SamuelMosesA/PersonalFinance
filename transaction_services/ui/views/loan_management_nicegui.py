@@ -16,6 +16,7 @@ class ManageLoanEntriesNiceGUI(TimeRangeNiceGUIView):
         return "Manage Loan Entries"
 
     def data_view(self, container: ui.element, start_date: datetime.date, end_date: datetime.date) -> None:
+        container.clear()
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -77,8 +78,8 @@ class ManageLoanEntriesNiceGUI(TimeRangeNiceGUIView):
                 
                 ui.button('Add Loan', on_click=lambda: self.add_loan(amount.value, cp.value, rem.value, curr.value, dt_input.value, container, start_date, end_date)).props('unelevated icon=add').classes('bg-slate-900 text-white px-8 py-2 rounded-lg font-medium hover:bg-slate-800 transition-colors h-10')
 
-    def delete_loans(self, grid, container, start_date, end_date):
-        rows = grid.get_selected_rows()
+    async def delete_loans(self, grid, container, start_date, end_date):
+        rows = await grid.get_selected_rows()
         if not rows:
             ui.notify('No rows selected', type='warning')
             return
@@ -90,15 +91,15 @@ class ManageLoanEntriesNiceGUI(TimeRangeNiceGUIView):
             cur.execute(f"DELETE FROM {TX_SCHEMA}.{LOAN_TABLE} WHERE id IN %s", (tuple(ids),))
             conn.commit()
             ui.notify(f'Deleted {len(ids)} loans')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
             cur.close()
             conn.close()
 
-    def create_settlement(self, grid, settlement_date, container, start_date, end_date):
-        rows = grid.get_selected_rows()
+    async def create_settlement(self, grid, settlement_date, container, start_date, end_date):
+        rows = await grid.get_selected_rows()
         if not rows:
             ui.notify('No loans selected for settlement', type='warning')
             return
@@ -130,7 +131,7 @@ class ManageLoanEntriesNiceGUI(TimeRangeNiceGUIView):
             )
             conn.commit()
             ui.notify('Settlement created')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
@@ -151,7 +152,7 @@ class ManageLoanEntriesNiceGUI(TimeRangeNiceGUIView):
             )
             conn.commit()
             ui.notify('Loan added')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:

@@ -20,6 +20,7 @@ class DebitTxLoanLinkingNiceGUI(TimeRangeNiceGUIView):
         return "Loan link ABN transactions"
 
     def data_view(self, container: ui.element, start_date: datetime.date, end_date: datetime.date) -> None:
+        container.clear()
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -92,9 +93,9 @@ class DebitTxLoanLinkingNiceGUI(TimeRangeNiceGUIView):
 
             ui.button('Link Loan', on_click=lambda: self.link_loan(tx_grid, loan_grid, container, start_date, end_date)).props('color=primary icon=link').classes('q-mt-md')
 
-    def link_loan(self, tx_grid, loan_grid, container, start_date, end_date):
-        tx_rows = tx_grid.get_selected_rows()
-        loan_rows = loan_grid.get_selected_rows()
+    async def link_loan(self, tx_grid, loan_grid, container, start_date, end_date):
+        tx_rows = await tx_grid.get_selected_rows()
+        loan_rows = await loan_grid.get_selected_rows()
         if not tx_rows or not loan_rows:
             ui.notify('Select one transaction and at least one loan', type='warning')
             return
@@ -115,7 +116,7 @@ class DebitTxLoanLinkingNiceGUI(TimeRangeNiceGUIView):
             cur.execute(f"UPDATE {TX_SCHEMA}.{LOAN_TABLE} SET debit_tx_reference = %s WHERE id IN %s", (tx_id, tuple(loan_ids)))
             conn.commit()
             ui.notify('Linked successfully')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:

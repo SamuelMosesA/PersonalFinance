@@ -99,7 +99,7 @@ def init_ui(config: Config):
             main_content.clear()
             view_dict[name].render(main_content)
             # Only hide drawer on selection if it's in overlay mode (typical for mobile)
-            if drawer.value and not drawer.props['fixed']: 
+            if drawer.value and not drawer.props.get('fixed'): 
                 drawer.hide()
 
         # Initial view

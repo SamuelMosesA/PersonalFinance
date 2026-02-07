@@ -59,8 +59,8 @@ class ManageCashCategoriesNiceGUI(BaseNiceGUIView):
                     subcat_input = ui.input('Subcategory')
                     ui.button('Add', on_click=lambda: self.add_category(cat_input.value, subcat_input.value, container))
 
-    def delete_selected(self, grid: ui.aggrid) -> None:
-        selected_rows = grid.get_selected_rows()
+    async def delete_selected(self, grid: ui.aggrid) -> None:
+        selected_rows = await grid.get_selected_rows()
         if not selected_rows:
             ui.notify('No rows selected', type='warning')
             return
@@ -105,6 +105,7 @@ class DebitCashCategoryLinkingNiceGUI(TimeRangeNiceGUIView):
         return "Cash Category link ABN transactions"
 
     def data_view(self, container: ui.element, start_date: datetime.date, end_date: datetime.date) -> None:
+        container.clear()
         conn = psycopg2.connect(self.db_conn_str)
         cur = conn.cursor()
 
@@ -184,9 +185,9 @@ class DebitCashCategoryLinkingNiceGUI(TimeRangeNiceGUIView):
                     rec_select = ui.select(['Monthly', 'Yearly'], label='Recurrence').props('outlined dense').classes('w-32')
                     ui.button(on_click=lambda: self.set_field(tx_grid, 'recurrence', rec_select.value, container, start_date, end_date)).props('unelevated icon=repeat').classes('bg-slate-800 text-white p-2 rounded-lg hover:bg-slate-900 transition-colors h-10')
 
-    def link_category(self, tx_grid, cat_grid, container, start_date, end_date):
-        tx_rows = tx_grid.get_selected_rows()
-        cat_rows = cat_grid.get_selected_rows()
+    async def link_category(self, tx_grid, cat_grid, container, start_date, end_date):
+        tx_rows = await tx_grid.get_selected_rows()
+        cat_rows = await cat_grid.get_selected_rows()
         if not tx_rows or not cat_rows:
             ui.notify('Select both transactions and a category', type='warning')
             return
@@ -200,15 +201,15 @@ class DebitCashCategoryLinkingNiceGUI(TimeRangeNiceGUIView):
             cur.execute(f"UPDATE {TX_SCHEMA}.{DEBIT_TX_TABLE} SET tx_category = %s WHERE id IN %s", (cat_id, tuple(tx_ids)))
             conn.commit()
             ui.notify('Linked successfully')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
             cur.close()
             conn.close()
 
-    def set_field(self, tx_grid, field, value, container, start_date, end_date):
-        tx_rows = tx_grid.get_selected_rows()
+    async def set_field(self, tx_grid, field, value, container, start_date, end_date):
+        tx_rows = await tx_grid.get_selected_rows()
         if not tx_rows:
             ui.notify('No transactions selected', type='warning')
             return
@@ -220,7 +221,7 @@ class DebitCashCategoryLinkingNiceGUI(TimeRangeNiceGUIView):
             cur.execute(f"UPDATE {TX_SCHEMA}.{DEBIT_TX_TABLE} SET {field} = %s WHERE id IN %s", (value, tuple(tx_ids)))
             conn.commit()
             ui.notify(f'Updated {field}')
-            self.data_view(container, start_date, end_date)
+            self.update_data_view(container, start_date, end_date)
         except Exception as e:
             ui.notify(f'Error: {e}', type='negative')
         finally:
