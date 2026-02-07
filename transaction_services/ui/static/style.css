@@ -1,0 +1,76 @@
+/* Finance Dashboard SaaS Theme */
+
+body {
+    font-family: 'Outfit', sans-serif !important;
+    background-color: #f8fafc;
+    /* slate-50 */
+}
+
+/* Vertical Tabs Styling */
+.q-tabs--vertical .q-tab__content.column {
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    padding: 0 1.25rem !important;
+    gap: 0.75rem !important;
+    flex-wrap: nowrap !important;
+}
+
+.q-tab {
+    justify-content: flex-start !important;
+    border-radius: 0.5rem;
+    /* rounded-lg */
+    margin: 0.25rem 0.75rem !important;
+    min-height: 44px !important;
+    text-transform: none !important;
+}
+
+.q-tab__icon {
+    font-size: 1.25rem !important;
+    margin-bottom: 0 !important;
+    /* Remove Quasar's default bottom margin for vertical icons */
+    margin-right: 0 !important;
+}
+
+.q-tab__label {
+    font-size: 0.875rem !important;
+    /* text-sm */
+    font-weight: 500 !important;
+    letter-spacing: normal !important;
+    text-align: left !important;
+    white-space: normal !important;
+    /* Allow wrapping but on the right side */
+    line-height: 1.2 !important;
+}
+
+.q-tab--active {
+    background-color: #4f46e5 !important;
+    /* bg-indigo-600 */
+    color: white !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    /* shadow-md */
+}
+
+.q-tab:hover:not(.q-tab--active) {
+    background-color: #eef2ff;
+    /* bg-indigo-50 */
+    color: #4f46e5;
+    /* text-indigo-600 */
+}
+
+/* Glassmorphism Cards */
+.glass-card {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border-radius: 0.75rem;
+    /* rounded-xl */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    /* shadow-sm */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sidebar Shadow */
+.sidebar-shadow {
+    box-shadow: 4px 0 15px -3px rgba(0, 0, 0, 0.05);
+}

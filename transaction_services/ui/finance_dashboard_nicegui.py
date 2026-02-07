@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from nicegui import ui
+from nicegui import app, ui
 from transaction_services.config.config_reader import Config, get_config
 from transaction_services.ui.views.base_views_nicegui import BaseNiceGUIView
 
@@ -58,19 +58,17 @@ def init_ui(config: Config):
 
     @ui.page('/')
     def main_page():
+        # Serve static files
+        import os
+        static_dir = os.path.join(os.path.dirname(__file__), 'static')
+        app.add_static_files('/static', static_dir)
+        
         # --- Theme & Global Styles ---
         ui.colors(primary='#4f46e5', secondary='#10b981', accent='#6366f1', positive='#10b981', negative='#ef4444', info='#3b82f6')
         
         ui.add_head_html('''
             <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-            <style>
-                body { font-family: 'Outfit', sans-serif !important; @apply bg-slate-50; }
-                .nav-item { @apply rounded-lg mx-2 my-1 transition-all duration-200; }
-                .nav-item:hover { @apply bg-indigo-50 translate-x-1; }
-                .nav-item.active { @apply bg-indigo-600 text-white shadow-md; }
-                .glass-card { @apply bg-white/80 backdrop-blur-md rounded-xl border border-white/20 shadow-sm; }
-                .sidebar-shadow { box-shadow: 4px 0 15px -3px rgba(0, 0, 0, 0.05); }
-            </style>
+            <link rel="stylesheet" href="/static/style.css?v=1.1">
         ''')
 
         with ui.header().classes('bg-white border-b border-slate-200 text-slate-900 px-6 py-4 items-center'):
@@ -80,34 +78,20 @@ def init_ui(config: Config):
                 ui.label('FinanceFlow').classes('text-xl font-bold tracking-tight text-slate-800 ml-2')
             ui.space()
         
-        with ui.left_drawer(fixed=True).classes('bg-white sidebar-shadow border-r border-slate-200 transition-all duration-300') as drawer:
-            with ui.column().classes('w-full px-4 py-8'):
-                ui.label('MAIN MENU').classes('text-xs font-semibold text-slate-400 tracking-widest mb-4 px-4')
+        with ui.left_drawer(fixed=True).classes('bg-white sidebar-shadow border-r border-slate-200 transition-all duration-300').props('width=320') as drawer:
+            with ui.column().classes('w-full px-2 py-8'):
+                ui.label('MAIN MENU').classes('text-xs font-semibold text-slate-400 tracking-widest mb-4 px-6')
                 
-                with ui.list().classes('w-full gap-1'):
+                with ui.tabs().props('vertical indicator-color=transparent').classes('w-full text-slate-600') as tabs:
                     for name in sorted(view_dict.keys()):
                         icon = icon_map.get(name, 'article')
-                        with ui.item(on_click=lambda n=name: select_view(n)).classes('nav-item cursor-pointer py-3 group'):
-                            with ui.item_section().props('side'):
-                                ui.icon(icon).classes('group-hover:text-indigo-600 transition-colors')
-                            with ui.item_section():
-                                ui.label(name).classes('text-sm font-medium text-slate-600 group-hover:text-slate-900 transition-colors')
+                        ui.tab(name, label=name, icon=icon).on('click', lambda: drawer.hide() if not drawer.props.get('fixed') else None)
 
-        main_content = ui.column().classes('w-full px-6 py-8 gap-8')
-        
-        def select_view(name: str):
-            main_content.clear()
-            view_dict[name].render(main_content)
-            # Only hide drawer on selection if it's in overlay mode (typical for mobile)
-            if drawer.value and not drawer.props.get('fixed'): 
-                drawer.hide()
-
-        # Initial view
-        if available_views:
-            select_view(sorted(view_dict.keys())[0])
-        else:
-            with main_content:
-                ui.label('No views available. Please implement and add views to the lists.').classes('text-h5 text-grey q-mt-xl')
+        with ui.tab_panels(tabs, value=sorted(view_dict.keys())[0], animated=True).classes('w-full bg-transparent'):
+            for name in sorted(view_dict.keys()):
+                with ui.tab_panel(name).classes('p-0 bg-transparent'):
+                    with ui.column().classes('w-full px-6 py-8 gap-8'):
+                        view_dict[name].render(ui.column().classes('w-full'))
 
 if __name__ in {"__main__", "__mp_main__"}:
     try:
