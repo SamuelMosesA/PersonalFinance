@@ -16,6 +16,7 @@ dependencies = [
     "streamlit-aggrid>=1.0.5",
     "pyyaml>=6.0.2",
     "mt-940>=4.30.0",
+    "nicegui>=3.7.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -40,3 +41,4 @@ personal-finance-statement-file-import = 'transaction_services.statement_file_pr
 
 [tool.rye.scripts]
 personal-finance-dashboard = ["streamlit", "run", "transaction_services/ui/finance_dashboard.py"]
+personal-finance-dashboard-nicegui = ["python", "transaction_services/ui/finance_dashboard_nicegui.py"]
