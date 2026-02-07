@@ -1,7 +1,7 @@
 import psycopg2
 import pandas as pd
 import streamlit as st
-from .base_views import BaseStreamlitView, TimeRangeView
+from transaction_services.ui.views.base_views import BaseStreamlitView, TimeRangeView
 from typing import Optional
 import datetime
 from transaction_services.config.db_constants import (

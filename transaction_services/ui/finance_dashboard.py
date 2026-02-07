@@ -8,6 +8,7 @@ from transaction_services.ui.views.cash_category_linking import (
 )
 from transaction_services.ui.views.loan_linking import (
     DebitTxLoanLinking,
+    DebitLoanManageAndLink,
     ManualTxLoanLinking,
     CreditCrdLoanLinking,
 )
@@ -91,6 +92,7 @@ def main():
         ManageManualTxEntries(postgres_conn_str),
         DirectDebitLinking(postgres_conn_str),
         CorrectDebitTx(postgres_conn_str),
+        DebitLoanManageAndLink(postgres_conn_str)
     ]
     render_all_views(available_views)
 

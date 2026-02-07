@@ -1,7 +1,7 @@
 import psycopg2
 import pandas as pd
 import streamlit as st
-from .base_views import TimeRangeView
+from transaction_services.ui.views.base_views import TimeRangeView
 import datetime
 import json
 
@@ -143,7 +143,7 @@ class CorrectDebitTx(TimeRangeView):
             existing_manual_tx,
             use_container_width=True,
             on_select="rerun",
-            key="existing_loans",
+            key="existing_manual_tx",
             selection_mode="multi-row",
             column_config={"_index": None},
         )

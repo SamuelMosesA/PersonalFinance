@@ -1,5 +1,5 @@
 from abnamroparser import icspdfparser
-from .base_statement_processor import BaseStatementProcessor
+from transaction_services.statement_file_processing.lib.base_statement_processor import BaseStatementProcessor
 from psycopg2 import sql
 import polars as pl
 from pathlib import Path

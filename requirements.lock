@@ -10,7 +10,7 @@
 #   universal: false
 
 -e file:.
-abn-amro-statement-parser @ git+https://github.com/denilsonsa/abn-amro-statement-parser.git@6237bff37cd96aca440f710aadae12dd1def9f0e
+abn-amro-statement-parser @ git+https://github.com/denilsonsa/abn-amro-statement-parser.git@686e1df3c441f092964fe3ab67bba6c46cbe78dd
 altair==4.2.2
 attrs==24.2.0
 babel==2.16.0

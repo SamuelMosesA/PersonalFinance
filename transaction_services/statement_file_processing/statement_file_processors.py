@@ -1,8 +1,8 @@
 from pathlib import Path
-from .lib.base_statement_processor import BaseStatementProcessor
-from .lib.abn_statement_processing import AbnStatementProcessor
-from .lib.bunq_statement_processing import BunqStatementProcessor
-from .lib.ics_credit_statement_processing import (
+from transaction_services.statement_file_processing.lib.base_statement_processor import BaseStatementProcessor
+from transaction_services.statement_file_processing.lib.abn_statement_processing import AbnStatementProcessor
+from transaction_services.statement_file_processing.lib.bunq_statement_processing import BunqStatementProcessor
+from transaction_services.statement_file_processing.lib.ics_credit_statement_processing import (
     IcsCreditStatementProcessor,
 )
 from transaction_services.config.config_reader import (
